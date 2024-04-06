@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Extrator de Texto de Imagem via CTRL+V</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        #pasteArea {
+            border: 2px dashed #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        #pasteArea:hover {
+            background-color: #e9e9e9;
+        }
+
+        #pasteArea p {
+            pointer-events: none;
+            color: #999;
+            text-align: center;
+            margin: 15px;
+            font-size: 16px;
+        }
+
+        #pasteArea img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #textOutput {
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            padding: 10px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<h2>Extrator de Texto de Imagem via CTRL+V</h2>
+<p>Clique na área abaixo e use CTRL+V para colar uma imagem.</p>
+
+<!-- Área para colar a imagem -->
+<div id="pasteArea" tabindex="0">
+    <p>Cole a imagem aqui</p>
+</div><br>
+
+<h3>Texto Extraído:</h3>
+<pre id="textOutput"></pre>
+<button id="copyTextBtn">Copiar Texto</button>
+
+
+<script>
+document.getElementById('pasteArea').addEventListener('paste', function(e) {
+    var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (var index in items) {
+        var item = items[index];
+        if (item.kind === 'file') {
+            var blob = item.getAsFile();
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('pasteArea').innerHTML = '<img src="' + event.target.result + '">';
+                extractText(event.target.result);
+            };
+            reader.readAsDataURL(blob);
+        }
+    }
+});
+
+function extractText(imageSrc) {
+    document.getElementById('textOutput').textContent = 'Extraindo texto, por favor aguarde...';
+    Tesseract.recognize(
+        imageSrc,
+        'por', // ou 'eng', dependendo do idioma do texto na imagem
+        {
+            logger: m => console.log(m),
+        }
+    ).then(function({ data: { text } }) {
+        document.getElementById('textOutput').textContent = text;
+    });
+}
+
+document.getElementById('copyTextBtn').addEventListener('click', function() {
+    const textOutput = document.getElementById('textOutput');
+    if (textOutput.textContent.length === 0) {
+        alert('Não há texto para copiar.');
+        return;
+    }
+
+    navigator.clipboard.writeText(textOutput.textContent).then(() => {
+        alert('Texto copiado com sucesso!');
+    }).catch(err => {
+        console.error('Falha ao copiar texto: ', err);
+        alert('Erro ao copiar texto.');
+    });
+});
+
+</script>
+</body>
+</html>
